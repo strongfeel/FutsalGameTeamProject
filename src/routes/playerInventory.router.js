@@ -1,0 +1,41 @@
+import express from "express";
+import { prisma } from "../utils/prisma/index.js";
+import authMiddleware from "../middlewares/auth.middleware.js";
+
+const router = express.Router();
+
+// 인벤토리 목록 조회(로그인 후 각자 인벤토리 불러 옴)
+router.get("/playerInventory", authMiddleware, async (req, res, next) => {
+  const { userId } = req.user;
+
+  try {
+    const inventory = await prisma.playerInventories.findFirst({
+      where: { userId: +userId }, // 로그인 된 userId 정보
+      select: {
+        playerId: {
+          select: {
+            playerName: true,
+            speed: true,
+            goalDecision: true,
+            goalPower: true,
+            defence: true,
+            stamina: true,
+            overall: true,
+          },
+        },
+      },
+    });
+
+    if (!inventory)
+      return res
+        .status(404)
+        .json({ message: "인벤토리 안에 선수가 없습니다." });
+
+    return res.status(200).json({ data: inventory });
+  } catch (err) {
+    console.log("인벤토리 불러 오던 중 오류 발생:", err);
+    next(err);
+  }
+});
+
+export default router;
