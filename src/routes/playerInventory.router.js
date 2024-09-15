@@ -44,7 +44,9 @@ router.get("/roster/:userId", async (req, res, next) => {
     const roster = await prisma.rosters.findFirst({
       where: {
         inventoryId: {
-          select: +userId,
+          select: {
+            userId: +userId,
+          },
         },
       },
       select: {
