@@ -24,12 +24,10 @@ router.get("/playerInventory", authMiddleware, async (req, res, next) => {
           },
         },
       },
+      orderBy: {
+        overall: "desc", // 높은 오버롤로 정렬
+      },
     });
-
-    if (!inventory)
-      return res
-        .status(404)
-        .json({ message: "인벤토리 안에 선수가 없습니다." });
 
     return res.status(200).json({ data: inventory });
   } catch (err) {
