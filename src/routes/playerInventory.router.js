@@ -36,4 +36,43 @@ router.get("/playerInventory", authMiddleware, async (req, res, next) => {
   }
 });
 
+// 출전 선수 명단 보기
+router.get("/roster/:userId", async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    const roster = await prisma.rosters.findFirst({
+      where: {
+        inventoryId: {
+          select: +userId,
+        },
+      },
+      select: {
+        inventoryId: {
+          select: {
+            playerId: {
+              select: {
+                playerName: true,
+                speed: true,
+                goalDecision: true,
+                goalPower: true,
+                defence: true,
+                stamina: true,
+                overall: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: {
+        overall: "desc", // 높은 오버롤로 정렬
+      },
+    });
+
+    return res.status(200).json({ data: roster });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

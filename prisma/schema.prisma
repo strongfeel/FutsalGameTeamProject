@@ -43,7 +43,7 @@ model Players {
 model PlayerInventories {
     inventoryId Int @id @default(autoincrement()) @map("inventoryId")
     userId Int @unique @map("userId")
-    playerId Int @unique @map("playerId")
+    playerId Int @map("playerId")
 
     players Players @relation(fields: [playerId], references: [playerId], onDelete: Cascade)
     users Users @relation(fields: [userId], references: [userId], onDelete: Cascade)
