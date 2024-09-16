@@ -4,7 +4,7 @@ import authMiddleware from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
-// 인벤토리 목록 조회(로그인 후 각자 인벤토리 불러 오기)
+// 인벤토리 목록 조회 API (로그인 후 각자 인벤토리 불러 오기)
 router.get("/playerInventory", authMiddleware, async (req, res, next) => {
   try {
     const { userId } = req.user;
@@ -39,7 +39,7 @@ router.get("/playerInventory", authMiddleware, async (req, res, next) => {
   }
 });
 
-// 출전 선수 명단 보기
+// 출전 선수 명단 보기 API
 router.get("/roster/:userId", async (req, res, next) => {
   try {
     const { userId } = req.params;
