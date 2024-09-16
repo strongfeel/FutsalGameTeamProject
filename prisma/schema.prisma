@@ -17,7 +17,8 @@ model Users {
   updatedAt DateTime @updatedAt @map("updatedAt")
 
   gamerecords GameRecords?
-  playerInventories PlayerInventories?
+  playerInventories PlayerInventories[]
+  rosters Rosters[]
 
 
   @@map("Users")
@@ -36,27 +37,29 @@ model Players {
     updatedAt DateTime @updatedAt @map("updatedAt")
 
     playerInventories PlayerInventories[]
+    rosters Rosters[]
 
     @@map("Player")
 }
 
 model PlayerInventories {
     inventoryId Int @id @default(autoincrement()) @map("inventoryId")
-    userId Int @unique @map("userId")
+    userId Int @map("userId")
     playerId Int @map("playerId")
 
     players Players @relation(fields: [playerId], references: [playerId], onDelete: Cascade)
     users Users @relation(fields: [userId], references: [userId], onDelete: Cascade)
-    rosters Rosters?
 
     @@map("PlayerInventories")
 }
 
 model Rosters {
     rosterId Int @id @default(autoincrement()) @map("rosterId")
-    inventoryId Int @unique @map("inventoryId")
+    userId Int @map("userId")
+    playerId Int @map("playerId") 
 
-    playerInventories PlayerInventories @relation(fields: [inventoryId], references: [inventoryId], onDelete: Cascade)
+    players Players @relation(fields: [playerId], references: [playerId], onDelete: Cascade)
+    users Users @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
     @@map("Rosters")
 }
