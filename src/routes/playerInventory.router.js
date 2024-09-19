@@ -98,7 +98,7 @@ router.post("/roster/add/:playerId", authMiddleware, async (req, res, next) => {
     if (inventory.playerId !== +playerId) {
       return res
         .status(404)
-        .json({ message: "해당하는 선수가 존재하지 않습니다." });
+        .json({ message: "해당하는 선수가 인벤토리 안에 존재하지 않습니다." });
     }
 
     // 출전 선수 명단 3명 이상인지 확인
@@ -159,5 +159,54 @@ router.post("/roster/add/:playerId", authMiddleware, async (req, res, next) => {
     next(err);
   }
 });
+
+// 출전선수 명단에서 인벤토리 회수 API
+router.post(
+  "/roster/remove/:playerId",
+  authMiddleware,
+  async (req, res, next) => {
+    try {
+      const { userId } = req.user;
+      const { playerId } = req.params;
+
+      const inventory = await prisma.playerInventories.findFirst({
+        where: { userId: +userId },
+      });
+
+      const roster = await prisma.rosters.findFirst({
+        where: { userId: +userId },
+      });
+
+      // 출전선수 명단에서 해당 선수 유무 확인
+      if (roster.playerId !== +playerId) {
+        return res.status(404).json({
+          message: "해당하는 선수가 출전 선수 명단에 존재하지 않습니다.",
+        });
+      }
+
+      const removeRosters = await prisma.$transaction(async tx => {
+        await tx.playerInventories.create({
+          data: {
+            userId: roster.userId,
+            playerId: roster.playerId,
+          },
+        });
+
+        await tx.rosters.delete({
+          where: { rosterId: roster.rosterId },
+        });
+      });
+
+      return res
+        .status(200)
+        .json(
+          { message: "출전선수 명단에서 제외되었습니다." },
+          { data: removeRosters }
+        );
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 export default router;
