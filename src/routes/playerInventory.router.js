@@ -169,10 +169,6 @@ router.post(
       const { userId } = req.user;
       const { playerId } = req.params;
 
-      const inventory = await prisma.playerInventories.findFirst({
-        where: { userId: +userId },
-      });
-
       const roster = await prisma.rosters.findFirst({
         where: { userId: +userId },
       });
