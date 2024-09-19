@@ -200,7 +200,7 @@ router.post(
       return res
         .status(200)
         .json(
-          { message: "출전선수 명단에서 제외되었습니다." },
+          { message: "출전 선수 명단에서 제외되었습니다." },
           { data: removeRosters }
         );
     } catch (err) {
