@@ -8,68 +8,69 @@ datasource db {
 }
 
 model Users {
-  userId Int @id @default(autoincrement()) @map("userId")
-  id String @unique @map("id")
-  password String @map("password")
-  money Int @map("money")
-  gamePoint Int @map("gamePoint")
-  createdAt DateTime @default(now()) @map("createdAt")
-  updatedAt DateTime @updatedAt @map("updatedAt")
-
-  gamerecords GameRecords?
-  playerInventories PlayerInventories?
-
+  userId            Int                 @id @default(autoincrement()) @map("userId")
+  id                String              @unique @map("id")
+  password          String              @map("password")
+  money             Int                 @map("money")
+  gamePoint         Int                 @map("gamePoint")
+  createdAt         DateTime            @default(now()) @map("createdAt")
+  updatedAt         DateTime            @updatedAt @map("updatedAt")
+  gamerecords       GameRecords?
+  playerInventories PlayerInventories[]
+  rosters           Rosters[]
 
   @@map("Users")
 }
 
 model Players {
-    playerId Int @id @default(autoincrement()) @map("playerId")
-    playerName String @unique @map("playerName")
-    speed Int @map("speed")
-    goalDecision Int @map("goalDecision")
-    goalPower Int @map("goalPower")
-    defence Int @map("defence")
-    stamina Int @map("stamina")
-    overall Int @map("overall")
-    createdAt DateTime @default(now()) @map("createdAt")
-    updatedAt DateTime @updatedAt @map("updatedAt")
+  playerId          Int                 @id @default(autoincrement()) @map("playerId")
+  playerName        String              @unique @map("playerName")
+  speed             Int                 @map("speed")
+  goalDecision      Int                 @map("goalDecision")
+  goalPower         Int                 @map("goalPower")
+  defence           Int                 @map("defence")
+  stamina           Int                 @map("stamina")
+  overall           Int                 @map("overall")
+  createdAt         DateTime            @default(now()) @map("createdAt")
+  updatedAt         DateTime            @updatedAt @map("updatedAt")
+  playerInventories PlayerInventories[]
+  rosters           Rosters[]
 
-    playerInventories PlayerInventories[]
-
-    @@map("Player")
+  @@map("Player")
 }
 
 model PlayerInventories {
-    inventoryId Int @id @default(autoincrement()) @map("inventoryId")
-    userId Int @unique @map("userId")
-    playerId Int @unique @map("playerId")
+  inventoryId Int     @id @default(autoincrement()) @map("inventoryId")
+  userId      Int     @map("userId")
+  playerId    Int     @map("playerId")
+  players     Players @relation(fields: [playerId], references: [playerId], onDelete: Cascade)
+  users       Users   @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
-    players Players @relation(fields: [playerId], references: [playerId], onDelete: Cascade)
-    users Users @relation(fields: [userId], references: [userId], onDelete: Cascade)
-    rosters Rosters?
-
-    @@map("PlayerInventories")
+  @@index([playerId], map: "PlayerInventories_playerId_fkey")
+  @@index([userId], map: "PlayerInventories_userId_fkey")
+  @@map("PlayerInventories")
 }
 
 model Rosters {
-    rosterId Int @id @default(autoincrement()) @map("rosterId")
-    inventoryId Int @unique @map("inventoryId")
+  rosterId Int     @id @default(autoincrement()) @map("rosterId")
+  userId   Int     @map("userId")
+  playerId Int     @map("playerId")
+  players  Players @relation(fields: [playerId], references: [playerId], onDelete: Cascade)
+  users    Users   @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
-    playerInventories PlayerInventories @relation(fields: [inventoryId], references: [inventoryId], onDelete: Cascade)
-
-    @@map("Rosters")
+  @@index([playerId], map: "Rosters_playerId_fkey")
+  @@index([userId], map: "Rosters_userId_fkey")
+  @@map("Rosters")
 }
 
 model GameRecords {
-    gameRecordId Int @id @default(autoincrement()) @map("gameRecordId")
-    userId Int @unique @map("userId")
-    win Int @map("win")
-    lose Int @map("lose")
-    draw Int @map("draw")
-    createdAt DateTime @default(now()) @map("createdAt")
+  gameRecordId Int      @id @default(autoincrement()) @map("gameRecordId")
+  userId       Int      @unique @map("userId")
+  win          Int      @map("win")
+  lose         Int      @map("lose")
+  draw         Int      @map("draw")
+  createdAt    DateTime @default(now()) @map("createdAt")
+  users        Users    @relation(fields: [userId], references: [userId], onDelete: Cascade)
 
-    users Users @relation(fields: [userId], references: [userId], onDelete: Cascade)
-
-    @@map("GameRecords")
+  @@map("GameRecords")
 }
