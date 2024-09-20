@@ -1,12 +1,10 @@
 generator client {
   provider = "prisma-client-js"
 }
-
 datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
-
 model Users {
   userId            Int                 @id @default(autoincrement()) @map("userId")
   id                String              @unique @map("id")
@@ -21,7 +19,6 @@ model Users {
 
   @@map("Users")
 }
-
 model Players {
   playerId          Int                 @id @default(autoincrement()) @map("playerId")
   playerName        String              @unique @map("playerName")
@@ -38,7 +35,6 @@ model Players {
 
   @@map("Player")
 }
-
 model PlayerInventories {
   inventoryId Int     @id @default(autoincrement()) @map("inventoryId")
   userId      Int     @map("userId")
@@ -50,7 +46,6 @@ model PlayerInventories {
   @@index([userId], map: "PlayerInventories_userId_fkey")
   @@map("PlayerInventories")
 }
-
 model Rosters {
   rosterId Int     @id @default(autoincrement()) @map("rosterId")
   userId   Int     @map("userId")
@@ -62,7 +57,6 @@ model Rosters {
   @@index([userId], map: "Rosters_userId_fkey")
   @@map("Rosters")
 }
-
 model GameRecords {
   gameRecordId Int      @id @default(autoincrement()) @map("gameRecordId")
   userId       Int      @unique @map("userId")
