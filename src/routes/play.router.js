@@ -1,15 +1,15 @@
 import express from 'express';
-import { prisma } from '../utils/prisma.js';
+import { prisma } from '../utils/prisma/index.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import functions from './function.js';
 
-router.post('/custom', async (req, res, next) => {
+router.post('/play/custom', async (req, res, next) => {
    try {
       const { userId } = req.users;
 
       let roster1 = [];
-      for (let i = 0; i < playerIdArr.length; i++) {
+      for (i = 0; i < playerIdArr.length; i++) {
          const roster = await prisma.players.findMany({
             where: { playerId: playerIdArr[i] },
             select: {
@@ -24,7 +24,10 @@ router.post('/custom', async (req, res, next) => {
          });
          roster1.push(roster);
       }
-      let team1 = SUM(speed) * 0.1 + SUM(goalDecision) * 0.2 + SUM(goalPower) * 0.15 + SUM(defence) * 0.3 + SUM(stamina) * 0.25;
+      let team1 = 0;
+      for (i = 0; i < roster1.length; i++) {
+         team1 += roster1[i][1] * 0.1 + roster1[i][2] * 0.2 + roster1[i][3] * 0.15 + roster1[i][4] * 0.3 + roster1[i][5] * 0.25;
+      }
 
       const { opponentId } = req.params;
 
@@ -44,7 +47,10 @@ router.post('/custom', async (req, res, next) => {
          });
          roster2.push(roster);
       }
-      let team2 = SUM(speed) * 0.1 + SUM(goalDecision) * 0.2 + SUM(goalPower) * 0.15 + SUM(defence) * 0.3 + SUM(stamina) * 0.25;
+      let team2 = 0;
+      for (i = 0; i < roster2.length; i++) {
+         team1 += roster2[i][1] * 0.1 + roster2[i][2] * 0.2 + roster2[i][3] * 0.15 + roster2[i][4] * 0.3 + roster2[i][5] * 0.25;
+      }
 
       let round = 0;
       let score1, score2 = 0;
@@ -83,12 +89,12 @@ router.post('/custom', async (req, res, next) => {
    }
 });
 
-router.post('/rank', async (req, res, next) => {
+router.post('/play/rank', async (req, res, next) => {
    try {
       const { userId } = req.users;
 
       let roster1 = [];
-      for (let i = 0; i < playerIdArr.length; i++) {
+      for (i = 0; i < playerIdArr.length; i++) {
          const roster = await prisma.players.findMany({
             where: { playerId: playerIdArr[i] },
             select: {
@@ -103,7 +109,10 @@ router.post('/rank', async (req, res, next) => {
          });
          roster1.push(roster);
       }
-      let team1 = SUM(speed) * 0.1 + SUM(goalDecision) * 0.2 + SUM(goalPower) * 0.15 + SUM(defence) * 0.3 + SUM(stamina) * 0.25;
+      let team1 = 0;
+      for (i = 0; i < roster1.length; i++) {
+         team1 += roster1[i][1] * 0.1 + roster1[i][2] * 0.2 + roster1[i][3] * 0.15 + roster1[i][4] * 0.3 + roster1[i][5] * 0.25;
+      }
 
       const { opponentId } = req.params;
 
@@ -123,7 +132,10 @@ router.post('/rank', async (req, res, next) => {
          });
          roster2.push(roster);
       }
-      let team2 = SUM(speed) * 0.1 + SUM(goalDecision) * 0.2 + SUM(goalPower) * 0.15 + SUM(defence) * 0.3 + SUM(stamina) * 0.25;
+      let team2 = 0;
+      for (i = 0; i < roster2.length; i++) {
+         team1 += roster2[i][1] * 0.1 + roster2[i][2] * 0.2 + roster2[i][3] * 0.15 + roster2[i][4] * 0.3 + roster2[i][5] * 0.25;
+      }
 
       let round = 0;
       let score1, score2 = 0;
@@ -152,13 +164,17 @@ router.post('/rank', async (req, res, next) => {
          async (tx) => {
             if (score1 > score2) {
                await tx.users.update({
-                  data: gamepoint + 25,
+                  where: {userId},
+                  select: {gamepoint},
+                  data: (gamepoint, + 25),
                })
                return res.status(200).json({ message: `승리/n현재 GP: ${gamepoint}` });
             }
             else if (score1 < score2) {
                await tx.users.update({
-                  data: gamepoint - 25,
+                  where: {userId},
+                  select: {gamepoint},
+                  data: (gamepoint, - 25),
                })
                return res.status(200).json({ message: `패배/n현재 GP: ${gamepoint}` });
             }
@@ -171,3 +187,5 @@ router.post('/rank', async (req, res, next) => {
       next(err);
    }
 })
+
+export default router;
