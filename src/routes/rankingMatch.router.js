@@ -139,8 +139,7 @@ router.post("/play/:userId", async (req, res, next) => {
       // 상대 유저 승리 처리
       const aScore = Math.floor(Math.random() * 4) + 2; // 2에서 5 사이
       const bScore = Math.floor(Math.random() * Math.min(3, aScore)); // aScore보다 작은 값을 설정
-      let result = `상대 유저 승리: A ${aScore} - ${bScore} B`;
-      console.log(result);
+      let result = `상대 유저 승리: 상대 팀 ${aScore} - ${bScore} 내 팀`;
 
       // 게임 승패 및 점수 업데이트 부분
       await prisma.$transaction(async tx => {
@@ -182,15 +181,12 @@ router.post("/play/:userId", async (req, res, next) => {
         }
       });
 
-      return res
-        .status(200)
-        .json({ message: "상대가 승리 하였습니다. 점수가 30점 하락 합니다." });
+      return res.status(200).json(`${result}. 점수가 30점 하락 합니다.`);
     } else {
       // 내 유저 승리 처리
       const bScore = Math.floor(Math.random() * 4) + 2; // 2에서 5 사이
       const aScore = Math.floor(Math.random() * Math.min(3, bScore)); // bScore보다 작은 값을 설정
-      let result = `승리: B ${bScore} - ${aScore} A`;
-      console.log(result);
+      let result = `내 승리: 내 팀 ${bScore} - ${aScore} 상대 팀`;
 
       await prisma.$transaction(async tx => {
         // 내가 승리 시 승 +1
@@ -233,9 +229,7 @@ router.post("/play/:userId", async (req, res, next) => {
         }
       });
 
-      return res
-        .status(200)
-        .json({ message: "내가 승리 하였습니다. 점수가 50점 상승 합니다." });
+      return res.status(200).json(`${result}. 점수가 50점 상승 합니다.`);
     }
   } catch (err) {
     console.log("게임 실행 시 오류 발생:", err);
