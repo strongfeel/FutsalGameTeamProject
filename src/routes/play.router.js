@@ -2,9 +2,9 @@ import express from 'express';
 import { prisma } from '../utils/prisma/index.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import functions from './function.js';
+import authMiddleware from "../middlewares/auth.middleware.js";
 
-router.post('/play/custom', async (req, res, next) => {
+router.post('/play/custom', authMiddleware, async (req, res, next) => {
    try {
       const { userId } = req.users;
 
@@ -89,7 +89,7 @@ router.post('/play/custom', async (req, res, next) => {
    }
 });
 
-router.post('/play/rank', async (req, res, next) => {
+router.post('/play/rank', authMiddleware, async (req, res, next) => {
    try {
       const { userId } = req.users;
 
