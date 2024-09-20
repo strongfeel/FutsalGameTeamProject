@@ -127,15 +127,15 @@ router.post("/play/custom/:opponentId/:userId", async (req, res, next) => {
       if (myScore > enemyScore) {
          return res
             .status(200)
-            .json({ message: `승리 ${myScore} - ${enemyScore}` });
+            .json({ message: `최종 점수: ${myScore} - ${enemyScore}, 결과: 승리` });
       } else if (myScore < enemyScore) {
          return res
             .status(200)
-            .json({ message: `패배 ${myScore} - ${enemyScore}` });
+            .json({ message: `최종 점수: ${myScore} - ${enemyScore}, 결과: 패배` });
       } else {
          return res
             .status(200)
-            .json({ message: `무승부 ${myScore} - ${enemyScore}` });
+            .json({ message: `최종 점수: ${myScore} - ${enemyScore}, 결과: 무승부` });
       }
    } catch (err) {
       console.log("게임 실행 시 오류 발생:", err);
@@ -341,7 +341,7 @@ router.post('/play/rank/:userId', async (req, res, next) => {
             select: { gamePoint: true },
          });
 
-         return res.status(200).json({ message: `승리 ${myScore} - ${enemyScore}`, data: mygamePoint })
+         return res.status(200).json({ message: `최종 점수: ${myScore} - ${enemyScore}, 결과: 승리, 50점 상승`, data: mygamePoint })
       } else if (myScore < enemyScore) {
          await prisma.$transaction(async tx => {
             // 상대편 승리 시 승 +1
@@ -386,14 +386,14 @@ router.post('/play/rank/:userId', async (req, res, next) => {
             select: { gamePoint: true },
          });
 
-         return res.status(200).json({ message: `패배 ${myScore} - ${enemyScore}`, data: mygamePoint })
+         return res.status(200).json({ message: `최종 점수: ${myScore} - ${enemyScore}, 결과: 패배, 30점 하락`, data: mygamePoint })
       } else {
          let mygamePoint = await prisma.users.findFirst({
             where: { userId: +userId },
             select: { gamePoint: true },
          });
 
-         return res.status(200).json({ message: `무승부 ${myScore} - ${enemyScore}`, data: mygamePoint })
+         return res.status(200).json({ message: `최종 점수: ${myScore} - ${enemyScore}, 결과: 무승부,  점수 변동 없음`, data: mygamePoint })
       }
    } catch (err) {
       next(err);
