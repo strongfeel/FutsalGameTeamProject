@@ -293,6 +293,10 @@ router.post('/play/rank/:userId', async (req, res, next) => {
          round++;
       };
 
+      let beforegamePoint = await prisma.users.findFirst({
+         where: { userId: +userId },
+         select: { gamePoint: true },
+      });
 
       if (myScore > enemyScore) {
          await prisma.$transaction(async tx => {
@@ -336,12 +340,18 @@ router.post('/play/rank/:userId', async (req, res, next) => {
             }
          });
 
-         let mygamePoint = await prisma.users.findFirst({
+         let aftergamePoint = await prisma.users.findFirst({
             where: { userId: +userId },
             select: { gamePoint: true },
          });
 
-         return res.status(200).json({ message: `최종 점수: ${myScore} - ${enemyScore}, 결과: 승리, 50점 상승`, data: mygamePoint })
+         return res.status(200).json({
+            message: `최종 점수: ${myScore} - ${enemyScore}, 결과: 승리, 50점 상승`,
+            data: {
+               beforegamePoint,
+               aftergamePoint
+            }
+         })
       } else if (myScore < enemyScore) {
          await prisma.$transaction(async tx => {
             // 상대편 승리 시 승 +1
@@ -381,19 +391,30 @@ router.post('/play/rank/:userId', async (req, res, next) => {
                });
             }
          });
-         let mygamePoint = await prisma.users.findFirst({
+         let aftergamePoint = await prisma.users.findFirst({
             where: { userId: +userId },
             select: { gamePoint: true },
          });
 
-         return res.status(200).json({ message: `최종 점수: ${myScore} - ${enemyScore}, 결과: 패배, 30점 하락`, data: mygamePoint })
+         return res.status(200).json({
+            message: `최종 점수: ${myScore} - ${enemyScore}, 결과: 패배, 30점 하락`,
+            data: {
+               beforegamePoint,
+               aftergamePoint
+            }
+         })
       } else {
-         let mygamePoint = await prisma.users.findFirst({
+         let aftergamePoint = await prisma.users.findFirst({
             where: { userId: +userId },
             select: { gamePoint: true },
          });
-
-         return res.status(200).json({ message: `최종 점수: ${myScore} - ${enemyScore}, 결과: 무승부,  점수 변동 없음`, data: mygamePoint })
+         return res.status(200).json({
+            message: `최종 점수: ${myScore} - ${enemyScore}, 결과: 무승부,  점수 변동 없음`,
+            data: {
+               beforegamePoint,
+               aftergamePoint
+            }
+         })
       }
    } catch (err) {
       next(err);
