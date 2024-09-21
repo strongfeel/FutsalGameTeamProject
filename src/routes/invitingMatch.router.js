@@ -1,12 +1,13 @@
 import express from "express";
 import { prisma } from "../utils/prisma/index.js";
+import authMiddleware from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
 // 친선 게임 API
-router.post("/play/:opponentId/:userId", async (req, res, next) => {
+router.post("/play/:opponentId", authMiddleware, async (req, res, next) => {
   const { opponentId } = req.params; // 친선 경기 시 상대편 아이디
-  const { userId } = req.params; // 내 유저 아이디
+  const { userId } = req.user; // 내 유저 아이디
 
   if (opponentId === userId) {
     return res
@@ -15,6 +16,32 @@ router.post("/play/:opponentId/:userId", async (req, res, next) => {
   }
 
   try {
+    // 내 출전 선수가 3명 미만이라면 오류 발생
+    const checkUserPlayerCount = await prisma.rosters.findMany({
+      where: { userId: +userId },
+      select: { playerId: true },
+    });
+
+    if (checkUserPlayerCount.length < 3) {
+      return res
+        .status(404)
+        .json({ message: "출전 선수 명단에 3명의 선수가 준비 되어야 합니다." });
+    }
+
+    // 상대 출전 선수가 3명 미만이라면 오류 발생
+    const checkOpponentPlayerCount = await prisma.rosters.findMany({
+      where: { userId: +opponentId },
+      select: { playerId: true },
+    });
+
+    if (checkOpponentPlayerCount.length < 3) {
+      return res
+        .status(404)
+        .json({
+          message: "상대 출전 선수 명단에 3명의 선수가 준비 되어야 합니다.",
+        });
+    }
+
     // 상대 로스터에 저장된 플레이어 아이디 가져오기
     const getOpponentIdRosters = await prisma.rosters.findMany({
       where: { userId: +opponentId },
@@ -30,7 +57,7 @@ router.post("/play/:opponentId/:userId", async (req, res, next) => {
       opponentIdPlayerIdArr.push(playerId.playerId);
     }
 
-    //// 내 로스터에 저장된 플레이어 아이디 가져오기
+    // 내 로스터에 저장된 플레이어 아이디 가져오기
     const getUserIdRosters = await prisma.rosters.findMany({
       where: { userId: +opponentId },
       select: {

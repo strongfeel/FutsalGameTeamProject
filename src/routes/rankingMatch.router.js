@@ -1,13 +1,32 @@
 import express from "express";
 import { prisma } from "../utils/prisma/index.js";
+import authMiddleware from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
 // 랭킹 게임 API
-router.post("/play/:userId", async (req, res, next) => {
-  const { userId } = req.params; // 내 유저 아이디
+router.post("/play", authMiddleware, async (req, res, next) => {
+  const { userId } = req.user;
+
+  // 내 출전 선수가 3명 미만이라면 오류 발생
+  const checkPlayerCount = await prisma.rosters.findMany({
+    where: { userId: +userId },
+    select: { playerId: true },
+  });
+
+  if (checkPlayerCount.length < 3) {
+    return res
+      .status(404)
+      .json({ message: "출전 선수 명단에 3명의 선수가 준비 되어야 합니다." });
+  }
 
   try {
+    // 유저 게임포인트 가져오기
+    const getUserGamePoint = await prisma.users.findFirst({
+      where: { userId: +userId },
+      select: { gamePoint: true },
+    });
+
     const getPlayerGamePoint = await prisma.users.findMany({
       select: {
         userId: true,
@@ -16,30 +35,60 @@ router.post("/play/:userId", async (req, res, next) => {
       orderBy: { gamePoint: "desc" },
     });
 
+    // 게임 포인트로 정렬된 유저 아이디 배열
     const getUserIdArr = [];
 
     for (let userId of getPlayerGamePoint) {
       getUserIdArr.push(userId.userId);
     }
 
+    // 게임 포인트로 게임 매칭
     let opponentId;
+    let highRankId;
+    let lowRankId;
     for (let i = 0; i < getUserIdArr.length; i++) {
-      // 로그인 된 유저의 점수 불러 오기
+      // 유저 아이디 배열에서 내 유저 아이디를 찾고
       if (+userId === getUserIdArr[i]) {
-        //
+        // 내가 꼴지라면 나보다 한단계 위의 유저와 매칭
         if (i === getUserIdArr.length - 1) {
           opponentId = getUserIdArr[i - 1];
-        } else {
+        } else if (i === 0) {
+          // 내가 1등이라면 나보다 한단계 밑의 유저와 매칭
           opponentId = getUserIdArr[i + 1];
+        } else {
+          // 꼴지가 아니라면 내 위의 랭킹 점수와 내 밑의 랭킹 점수의 차가 적은 유저와 매칭
+          lowRankId = getUserIdArr[i + 1];
+
+          // lowRankId 게임 포인트 가져오기
+          const getLowGamePoint = await prisma.users.findFirst({
+            where: { userId: +lowRankId },
+            select: { gamePoint: true },
+          });
+
+          highRankId = getUserIdArr[i - 1];
+
+          // highRankId 게임 포인트 가져오기
+          const getHighGamePoint = await prisma.users.findFirst({
+            where: { userId: +lowRankId },
+            select: { gamePoint: true },
+          });
+
+          let subtractionLow =
+            Object.values(getUserGamePoint) - Object.values(getLowGamePoint);
+          let subtractionHigh =
+            Object.values(getHighGamePoint) - Object.values(getUserGamePoint);
+
+          if (subtractionLow < subtractionHigh) {
+            opponentId = lowRankId;
+          } else if (subtractionLow > subtractionHigh) {
+            opponentId = highRankId;
+          } else {
+            // 차이가 같을 경우
+            opponentId = lowRankId;
+          }
         }
       }
     }
-
-    // 유저 게임포인트 가져오기
-    const getUserGamePoint = await prisma.users.findFirst({
-      where: { userId: +userId },
-      select: { gamePoint: true },
-    });
 
     // 상대 게임 포인트 가져오기
     const getOpponentGamePoint = await prisma.users.findFirst({
@@ -62,7 +111,7 @@ router.post("/play/:userId", async (req, res, next) => {
       opponentIdPlayerIdArr.push(playerId.playerId);
     }
 
-    //// 내 로스터에 저장된 플레이어 아이디 가져오기
+    // 내 로스터에 저장된 플레이어 아이디 가져오기
     const getUserIdRosters = await prisma.rosters.findMany({
       where: { userId: +opponentId },
       select: {
@@ -157,7 +206,7 @@ router.post("/play/:userId", async (req, res, next) => {
           },
         });
 
-        // 상대편 승리시 +50점
+        // 상대편 승리 시 +50점
         await tx.users.update({
           where: { userId: +opponentId },
           data: {
@@ -165,6 +214,7 @@ router.post("/play/:userId", async (req, res, next) => {
           },
         });
 
+        // 내 패배 시 -30점
         await tx.users.update({
           where: { userId: +userId },
           data: { gamePoint: { decrement: 30 } },
@@ -205,7 +255,7 @@ router.post("/play/:userId", async (req, res, next) => {
           },
         });
 
-        // 내가 승리시 +50점
+        // 내가 승리 시 +50점
         await tx.users.update({
           where: { userId: +userId },
           data: {
@@ -213,6 +263,7 @@ router.post("/play/:userId", async (req, res, next) => {
           },
         });
 
+        // 상대 패배 시 -30점
         await tx.users.update({
           where: { userId: +opponentId },
           data: { gamePoint: { decrement: 30 } },
