@@ -2,10 +2,12 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import LogMiddleware from "./src/middlewares/log.middleware.js";
 import errorHandlingMiddleware from "./src/middlewares/error-handling.middleware.js";
-import InventoryRouter from "./src/routes/playerInventory.router.js"; // 인벤토리 라우터 링크 추가 부분 추가
+import InventoryRouter from "./src/routes/userInventory.router.js"; // 인벤토리 라우터 링크 추가 부분 추가
+import RosterRouter from "./src/routes/userRoster.router.js"; // 출전 선수 라우터 링크 추가 부분 추가
 import InvitingMatchRouter from "./src/routes/invitingMatch.router.js"; // 친선경기 라우터 링크 추가 부분 추가
 import RankingMatchRouter from "./src/routes/rankingMatch.router.js"; // 랭킹경기 라우터 링크 추가 부분 추가
-import CashShopRouter from "./src/routes/cashShop.router.js"; // 캐시뽑기 & 선수뽑기 & 랭킹 조회 라우터 링크 추가 부분 추가
+import CashShopRouter from "./src/routes/cashShop.router.js"; // 캐시뽑기 & 랭킹 조회 라우터 링크 추가 부분 추가
+import RandomGotcha from "./src/routes/randomPlayerGotcha.router.js"; // 선수뽑기 라우터 링크 추가 부분 추가
 import UsersRouter from "./src/routes/user.router.js"; // 회원가입 & 로그인 라우터 링크 추가 부분 추가
 import dotenv from "dotenv";
 
@@ -20,10 +22,12 @@ app.use(cookieParser());
 
 app.use("/api", [
   InventoryRouter,
+  RosterRouter,
   InvitingMatchRouter,
   RankingMatchRouter,
   CashShopRouter,
   UsersRouter,
+  RandomGotcha,
 ]); // 라우터 사용 부분 추가
 
 app.use(errorHandlingMiddleware);
