@@ -5,7 +5,7 @@ import authMiddleware from "../middlewares/auth.middleware.js";
 const router = express.Router();
 
 // 랭킹 게임 API
-router.post("/play", authMiddleware, async (req, res, next) => {
+router.post("/rankingPlay", authMiddleware, async (req, res, next) => {
   const { userId } = req.user;
 
   // 내 출전 선수가 3명 미만이라면 오류 발생

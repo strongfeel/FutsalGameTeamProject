@@ -5,7 +5,7 @@ import authMiddleware from "../middlewares/auth.middleware.js";
 const router = express.Router();
 
 // 친선 게임 API
-router.post("/play", authMiddleware, async (req, res, next) => {
+router.post("/invitingPlay", authMiddleware, async (req, res, next) => {
   const { opponentId } = req.body; // 친선 경기 시 상대편 id
   const userId = req.user.id; // 내 id
 
