@@ -39,7 +39,6 @@ router.post("/play", authMiddleware, async (req, res, next) => {
       },
       orderBy: { gamePoint: "desc" },
     });
-    console.log(getPlayerGamePoint);
 
     // 게임 포인트로 정렬된 유저 아이디 배열
     const getUserIdArr = [];
@@ -50,8 +49,6 @@ router.post("/play", authMiddleware, async (req, res, next) => {
         getUserIdArr.push(userId.userId);
       }
     }
-
-    console.log(getUserIdArr);
 
     // 게임 포인트로 게임 매칭
     let opponentId;

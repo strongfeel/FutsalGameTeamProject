@@ -26,27 +26,17 @@ router.get("/roster/:id", async (req, res, next) => {
       select: { userId: true },
     });
 
-    const getUserIdArr = Object.values(getUserId);
-
     // 해당 유저의 playerId 가져오기
     const getPlayerId = await prisma.rosters.findMany({
-      // 어차피 userId값은 하나만 오기 때문에 0을 넣음
-      where: { userId: getUserIdArr[0] },
+      where: { userId: +Object.values(getUserId) },
       select: { playerId: true },
     });
 
-    // getPlayerId 값을 빈배열로 빼오는 작업
-    const playerIdArr = [];
-
-    for (let playerId of getPlayerId) {
-      playerIdArr.push(playerId.playerId);
-    }
-
     // 해당하는 선수 데이터 가져오기
     let rosterArr = [];
-    for (let i = 0; i < playerIdArr.length; i++) {
+    for (let i = 0; i < getPlayerId.length; i++) {
       const roster = await prisma.players.findMany({
-        where: { playerId: playerIdArr[i] },
+        where: { playerId: +Object.values(getPlayerId[i]) },
         select: {
           playerId: true,
           playerName: true,
@@ -78,18 +68,11 @@ router.get("/rosterMyTeam", authMiddleware, async (req, res, next) => {
       select: { playerId: true },
     });
 
-    // getPlayerId 값을 빈배열로 빼오는 작업
-    const playerIdArr = [];
-
-    for (let playerId of getPlayerId) {
-      playerIdArr.push(playerId.playerId);
-    }
-
     // 해당하는 선수 데이터 가져오기
     let rosterArr = [];
-    for (let i = 0; i < playerIdArr.length; i++) {
+    for (let i = 0; i < getPlayerId.length; i++) {
       const roster = await prisma.players.findMany({
-        where: { playerId: playerIdArr[i] },
+        where: { playerId: +Object.values(getPlayerId[i]) },
         select: {
           playerId: true,
           playerName: true,
