@@ -180,64 +180,37 @@ router.post("/play", authMiddleware, async (req, res, next) => {
         getPlayerDataForUser[0][i].stamina * 0.2;
     }
 
-    const maxScore = opponentTotalPoint + userTotalPoint;
+    let round = 0;
+    let myScore = 0;
+    let enemyScore = 0;
 
-    const randomValue = Math.random() * maxScore;
+    let diff = userTotalPoint - opponentTotalPoint;
+    let chance1 = Math.round(50 + diff);
+    let chance2 = Math.round(50 - diff);
 
-    if (randomValue < opponentTotalPoint) {
-      // 상대 유저 승리 처리
-      const aScore = Math.floor(Math.random() * 4) + 2; // 2에서 5 사이
-      const bScore = Math.floor(Math.random() * Math.min(3, aScore)); // aScore보다 작은 값을 설정
-      let result = `상대 유저 승리: 상대 팀 ${aScore} - ${bScore} 내 팀`;
-
-      // 게임 승패 및 점수 업데이트 부분
-      await prisma.$transaction(async tx => {
-        // 상대편 승리 시 승 +1
-        await tx.gameRecords.update({
-          where: { userId: +opponentId },
-          data: { win: +1 },
-        });
-
-        // 상대편 승리 시 내 패 +1
-        await tx.gameRecords.update({
-          where: { userId: +userId },
-          data: {
-            lose: +1,
-          },
-        });
-
-        // 상대편 승리 시 +50점
-        await tx.users.update({
-          where: { userId: +opponentId },
-          data: {
-            gamePoint: { increment: 50 },
-          },
-        });
-
-        // 내 패배 시 -30점
-        await tx.users.update({
-          where: { userId: +userId },
-          data: { gamePoint: { decrement: 30 } },
-        });
-
-        // 점수가 30점보다 작을시 0점으로 바꿈)
-        if (Object.values(getUserGamePoint) <= 30) {
-          await tx.users.update({
-            where: { userId: +userId },
-            data: {
-              gamePoint: 0,
-            },
-          });
+    while (round < 10) {
+      if (round % 2 === 0) {
+        //내 공격
+        if (chance1 > Math.random() * 100) {
+          myScore++;
+          console.log("우리 팀이 득점했습니다!");
         }
-      });
+      } else {
+        //상대 공격
+        if (chance2 > Math.random() * 100) {
+          enemyScore++;
+          console.log("상대 팀이 득점했습니다!");
+        }
+      }
+      round++;
+    }
 
-      return res.status(200).json(`${result}. 점수가 30점 하락 합니다.`);
-    } else {
-      // 내 유저 승리 처리
-      const bScore = Math.floor(Math.random() * 4) + 2; // 2에서 5 사이
-      const aScore = Math.floor(Math.random() * Math.min(3, bScore)); // bScore보다 작은 값을 설정
-      let result = `내 승리: 내 팀 ${bScore} - ${aScore} 상대 팀`;
+    let beforeGamePoint = await prisma.users.findFirst({
+      where: { userId: +userId },
+      select: { gamePoint: true },
+    });
 
+    if (myScore > enemyScore) {
       await prisma.$transaction(async tx => {
         // 내가 승리 시 승 +1
         await tx.gameRecords.update({
@@ -255,7 +228,7 @@ router.post("/play", authMiddleware, async (req, res, next) => {
           },
         });
 
-        // 내가 승리 시 +50점
+        // 내가 승리시 +50점
         await tx.users.update({
           where: { userId: +userId },
           data: {
@@ -263,7 +236,6 @@ router.post("/play", authMiddleware, async (req, res, next) => {
           },
         });
 
-        // 상대 패배 시 -30점
         await tx.users.update({
           where: { userId: +opponentId },
           data: { gamePoint: { decrement: 30 } },
@@ -280,10 +252,83 @@ router.post("/play", authMiddleware, async (req, res, next) => {
         }
       });
 
-      return res.status(200).json(`${result}. 점수가 50점 상승 합니다.`);
+      let afterGamePoint = await prisma.users.findFirst({
+        where: { userId: +userId },
+        select: { gamePoint: true },
+      });
+
+      return res.status(200).json({
+        message: `최종 점수: ${myScore} - ${enemyScore}, 결과: 승리, 50점 상승`,
+        data: {
+          beforeGamePoint,
+          afterGamePoint,
+        },
+      });
+    } else if (myScore < enemyScore) {
+      await prisma.$transaction(async tx => {
+        // 상대편 승리 시 승 +1
+        await tx.gameRecords.update({
+          where: { userId: +opponentId },
+          data: { win: +1 },
+        });
+
+        // 상대편 승리 시 내 패 +1
+        await tx.gameRecords.update({
+          where: { userId: +userId },
+          data: {
+            lose: +1,
+          },
+        });
+
+        // 상대편 승리시 +50점
+        await tx.users.update({
+          where: { userId: +opponentId },
+          data: {
+            gamePoint: { increment: 50 },
+          },
+        });
+
+        await tx.users.update({
+          where: { userId: +userId },
+          data: { gamePoint: { decrement: 30 } },
+        });
+
+        // 점수가 30점보다 작을시 0점으로 바꿈)
+        if (Object.values(getUserGamePoint) <= 30) {
+          await tx.users.update({
+            where: { userId: +userId },
+            data: {
+              gamePoint: 0,
+            },
+          });
+        }
+      });
+      let afterGamePoint = await prisma.users.findFirst({
+        where: { userId: +userId },
+        select: { gamePoint: true },
+      });
+
+      return res.status(200).json({
+        message: `최종 점수: ${myScore} - ${enemyScore}, 결과: 패배, 30점 하락`,
+        data: {
+          beforeGamePoint,
+          afterGamePoint,
+        },
+      });
+    } else {
+      let afterGamePoint = await prisma.users.findFirst({
+        where: { userId: +userId },
+        select: { gamePoint: true },
+      });
+      return res.status(200).json({
+        message: `최종 점수: ${myScore} - ${enemyScore}, 결과: 무승부,  점수 변동 없음`,
+        data: {
+          beforeGamePoint,
+          afterGamePoint,
+        },
+      });
     }
   } catch (err) {
-    console.log("게임 실행 시 오류 발생:", err);
     next(err);
   }
 });

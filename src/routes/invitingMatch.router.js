@@ -35,11 +35,9 @@ router.post("/play/:opponentId", authMiddleware, async (req, res, next) => {
     });
 
     if (checkOpponentPlayerCount.length < 3) {
-      return res
-        .status(404)
-        .json({
-          message: "상대 출전 선수 명단에 3명의 선수가 준비 되어야 합니다.",
-        });
+      return res.status(404).json({
+        message: "상대 출전 선수 명단에 3명의 선수가 준비 되어야 합니다.",
+      });
     }
 
     // 상대 로스터에 저장된 플레이어 아이디 가져오기
@@ -126,24 +124,43 @@ router.post("/play/:opponentId", authMiddleware, async (req, res, next) => {
         getPlayerDataForUser[0][i].stamina * 0.2;
     }
 
-    const maxScore = opponentTotalPoint + userTotalPoint;
+    let round = 0;
+    let myScore = 0;
+    let enemyScore = 0;
 
-    const randomValue = Math.random() * maxScore;
+    let diff = userTotalPoint - opponentTotalPoint;
+    let chance1 = Math.round(50 + diff);
+    let chance2 = Math.round(50 - diff);
 
-    if (randomValue < opponentTotalPoint) {
-      // 상대 유저 승리 처리
-      const aScore = Math.floor(Math.random() * 4) + 2; // 2에서 5 사이
-      const bScore = Math.floor(Math.random() * Math.min(3, aScore)); // aScore보다 작은 값을 설정
-      let result = `상대 유저 승리: 상대 팀 ${aScore} - ${bScore} 내 팀`;
-      console.log(result);
-      return res.status(200).json({ message: result });
+    while (round < 10) {
+      if (round % 2 === 0) {
+        //내 공격
+        if (chance1 > Math.random() * 100) {
+          myScore++;
+          console.log("우리 팀이 득점했습니다!");
+        }
+      } else {
+        //상대 공격
+        if (chance2 > Math.random() * 100) {
+          enemyScore++;
+          console.log("상대 팀이 득점했습니다!");
+        }
+      }
+      round++;
+    }
+
+    if (myScore > enemyScore) {
+      return res
+        .status(200)
+        .json({ message: `최종 점수: ${myScore} - ${enemyScore}, 결과: 승리` });
+    } else if (myScore < enemyScore) {
+      return res
+        .status(200)
+        .json({ message: `최종 점수: ${myScore} - ${enemyScore}, 결과: 패배` });
     } else {
-      // 내 유저 승리 처리
-      const bScore = Math.floor(Math.random() * 4) + 2; // 2에서 5 사이
-      const aScore = Math.floor(Math.random() * Math.min(3, bScore)); // bScore보다 작은 값을 설정
-      let result = `내 승리: 내 팀 ${bScore} - ${aScore} 상대 팀`;
-      console.log(result);
-      return res.status(200).json({ message: result });
+      return res.status(200).json({
+        message: `최종 점수: ${myScore} - ${enemyScore}, 결과: 무승부`,
+      });
     }
   } catch (err) {
     console.log("게임 실행 시 오류 발생:", err);
