@@ -8,6 +8,7 @@ const router = express.Router();
 router.post("/play/:opponentId", authMiddleware, async (req, res, next) => {
   const { opponentId } = req.params; // 친선 경기 시 상대편 아이디
   const { userId } = req.user; // 내 유저 아이디
+  console.log(userId);
 
   if (opponentId === userId) {
     return res
