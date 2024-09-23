@@ -1,13 +1,14 @@
 import express from "express";
 import { prisma } from "../utils/prisma/index.js";
+import { Prisma } from "@prisma/client";
 import authMiddleware from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
 // 다른 유저 출전 선수 명단 검색 API
-router.get("/roster/:id", async (req, res, next) => {
+router.get("/roster", async (req, res, next) => {
   try {
-    const { id } = req.params;
+    const { id } = req.body;
 
     // 유저 존재 유무 파악
     const getId = await prisma.users.findFirst({
@@ -94,39 +95,37 @@ router.get("/rosterMyTeam", authMiddleware, async (req, res, next) => {
 });
 
 // 출전선수 명단에서 인벤토리 회수 API
-router.post(
-  "/roster/remove/:playerId",
-  authMiddleware,
-  async (req, res, next) => {
-    try {
-      const { userId } = req.user;
-      const { playerId } = req.params;
+router.post("/roster/remove", authMiddleware, async (req, res, next) => {
+  try {
+    const { userId } = req.user;
+    const { playerId } = req.body;
 
-      const getPlayerId = await prisma.rosters.findMany({
-        where: { userId: +userId },
-        select: { playerId: true },
+    const getPlayerId = await prisma.rosters.findMany({
+      where: { userId: +userId },
+      select: { playerId: true },
+    });
+
+    const getPlayerIdArr = [];
+
+    for (let playerId of getPlayerId) {
+      getPlayerIdArr.push(playerId.playerId);
+    }
+
+    // 출전선수 명단에서 해당 선수 유무 확인
+    if (!getPlayerIdArr.includes(+playerId)) {
+      return res.status(404).json({
+        message: "해당하는 선수가 출전 선수 명단에 존재하지 않습니다.",
       });
+    }
 
-      const getPlayerIdArr = [];
+    // 삭제 할 선수 rosterId 가져오기
+    const getRosterId = await prisma.rosters.findFirst({
+      where: { playerId: +playerId, userId: +userId },
+      select: { rosterId: true },
+    });
 
-      for (let playerId of getPlayerId) {
-        getPlayerIdArr.push(playerId.playerId);
-      }
-
-      // 출전선수 명단에서 해당 선수 유무 확인
-      if (!getPlayerIdArr.includes(+playerId)) {
-        return res.status(404).json({
-          message: "해당하는 선수가 출전 선수 명단에 존재하지 않습니다.",
-        });
-      }
-
-      // 출전 선수 명단에서 rosterId 하나 가져오기
-      const getRosterId = await prisma.rosters.findFirst({
-        where: { playerId: +playerId },
-        select: { rosterId: true },
-      });
-
-      await prisma.$transaction(async tx => {
+    await prisma.$transaction(
+      async tx => {
         await tx.playerInventories.create({
           data: {
             userId: +userId,
@@ -137,15 +136,19 @@ router.post(
         await tx.rosters.delete({
           where: { rosterId: +Object.values(getRosterId) },
         });
-      });
+      },
+      {
+        // 격리수준 설정
+        isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+      }
+    );
 
-      return res
-        .status(200)
-        .json({ message: "출전 선수 명단에서 제외되었습니다." });
-    } catch (err) {
-      next(err);
-    }
+    return res
+      .status(200)
+      .json({ message: "출전 선수 명단에서 제외되었습니다." });
+  } catch (err) {
+    next(err);
   }
-);
+});
 
 export default router;

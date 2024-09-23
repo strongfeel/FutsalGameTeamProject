@@ -1,10 +1,11 @@
 import express from "express";
 import { prisma } from "../utils/prisma/index.js";
+import { Prisma } from "@prisma/client";
 import authMiddleware from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
-// 인벤토리 목록 조회 API (로그인 후 각자 인벤토리 불러 오기)
+// 내 인벤토리 목록 조회 API (로그인 후 각자 인벤토리 불러 오기)
 router.get("/playerInventory", authMiddleware, async (req, res, next) => {
   try {
     const { userId } = req.user;
@@ -48,20 +49,22 @@ router.get("/playerInventory", authMiddleware, async (req, res, next) => {
 });
 
 // 인벤토리에서 출전 선수 추가 API
-router.post("/roster/add/:playerId", authMiddleware, async (req, res, next) => {
+router.post("/roster/add", authMiddleware, async (req, res, next) => {
   try {
     const { userId } = req.user;
-    const { playerId } = req.params;
+    const { playerId } = req.body;
 
     const getPlayerIdInventory = await prisma.playerInventories.findMany({
       where: { userId: +userId },
-      select: { playerId: true },
+      select: {
+        playerId: true,
+      },
     });
 
     // 인벤토리에서 추가 할 선수 유무 확인
     let playerIdInventoryArr = [];
-    for (let playerId of getPlayerIdInventory) {
-      playerIdInventoryArr.push(playerId.playerId);
+    for (let arr of getPlayerIdInventory) {
+      playerIdInventoryArr.push(arr.playerId);
     }
 
     if (!playerIdInventoryArr.includes(+playerId)) {
@@ -110,24 +113,32 @@ router.post("/roster/add/:playerId", authMiddleware, async (req, res, next) => {
         .json({ message: "출전 선수 명단에 이미 존재 합니다." });
     }
 
-    // 인벤토리에서 해당 인벤토리 아이디 하나 가져오기
+    // 삭제할 선수 인벤토리 아이디 가져오기
     const getInventoryId = await prisma.playerInventories.findFirst({
-      where: { playerId: +playerId },
+      where: { playerId: +playerId, userId: +userId },
       select: { inventoryId: true },
     });
 
-    await prisma.$transaction(async tx => {
-      await tx.rosters.create({
-        data: {
-          userId: +userId,
-          playerId: +playerId,
-        },
-      });
+    await prisma.$transaction(
+      async tx => {
+        await tx.rosters.create({
+          data: {
+            userId: +userId,
+            playerId: +playerId,
+          },
+        });
 
-      await tx.playerInventories.delete({
-        where: { inventoryId: +Object.values(getInventoryId) },
-      });
-    });
+        await tx.playerInventories.delete({
+          where: {
+            inventoryId: +Object.values(getInventoryId),
+          },
+        });
+      },
+      {
+        // 격리수준 설정
+        isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+      }
+    );
 
     return res
       .status(200)

@@ -1,5 +1,6 @@
 import express from "express";
 import { prisma } from "../utils/prisma/index.js";
+import { Prisma } from "@prisma/client";
 import authMiddleware from "../middlewares/auth.middleware.js";
 
 const router = express.Router();
@@ -73,21 +74,27 @@ router.post("/playerDraw", authMiddleware, async (req, res, next) => {
 
     const playerIdArr = parseInt(Object.values(randomPlayer));
 
-    await prisma.$transaction(async tx => {
-      await tx.users.update({
-        where: { userId: +userId },
-        data: {
-          money: { decrement: 500 },
-        },
-      });
+    await prisma.$transaction(
+      async tx => {
+        await tx.users.update({
+          where: { userId: +userId },
+          data: {
+            money: { decrement: 500 },
+          },
+        });
 
-      await tx.playerInventories.create({
-        data: {
-          userId: +userId,
-          playerId: playerIdArr,
-        },
-      });
-    });
+        await tx.playerInventories.create({
+          data: {
+            userId: +userId,
+            playerId: playerIdArr,
+          },
+        });
+      },
+      {
+        // 격리수준 설정
+        isolationLevel: Prisma.TransactionIsolationLevel.ReadCommitted,
+      }
+    );
 
     return res.status(200).json({ message: "선수를 영입했습니다." });
   } catch (e) {

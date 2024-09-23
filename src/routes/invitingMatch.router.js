@@ -5,10 +5,9 @@ import authMiddleware from "../middlewares/auth.middleware.js";
 const router = express.Router();
 
 // 친선 게임 API
-router.post("/play/:opponentId", authMiddleware, async (req, res, next) => {
-  const { opponentId } = req.params; // 친선 경기 시 상대편 아이디
-  const { userId } = req.user; // 내 유저 아이디
-  console.log(userId);
+router.post("/play", authMiddleware, async (req, res, next) => {
+  const { opponentId } = req.body; // 친선 경기 시 상대편 id
+  const userId = req.user.id; // 내 id
 
   if (opponentId === userId) {
     return res
@@ -18,56 +17,76 @@ router.post("/play/:opponentId", authMiddleware, async (req, res, next) => {
 
   try {
     // 내 출전 선수가 3명 미만이라면 오류 발생
-    const checkUserPlayerCount = await prisma.rosters.findMany({
-      where: { userId: +userId },
-      select: { playerId: true },
+    const checkUserPlayerCount = await prisma.users.findMany({
+      where: { id: userId },
+      select: {
+        rosters: {
+          select: {
+            playerId: true,
+          },
+        },
+      },
     });
 
-    if (checkUserPlayerCount.length < 3) {
-      return res
-        .status(404)
-        .json({ message: "출전 선수 명단에 3명의 선수가 준비 되어야 합니다." });
+    if (checkUserPlayerCount[0].rosters.length < 3) {
+      return res.status(404).json({
+        message: "내 출전 선수 명단에 3명의 선수가 준비 되어야 합니다.",
+      });
     }
 
     // 상대 출전 선수가 3명 미만이라면 오류 발생
-    const checkOpponentPlayerCount = await prisma.rosters.findMany({
-      where: { userId: +opponentId },
-      select: { playerId: true },
+    const checkOpponentPlayerCount = await prisma.users.findMany({
+      where: { id: opponentId },
+      select: {
+        rosters: {
+          select: {
+            playerId: true,
+          },
+        },
+      },
     });
 
-    if (checkOpponentPlayerCount.length < 3) {
+    if (checkOpponentPlayerCount[0].rosters.length < 3) {
       return res.status(404).json({
         message: "상대 출전 선수 명단에 3명의 선수가 준비 되어야 합니다.",
       });
     }
 
     // 상대 로스터에 저장된 플레이어 아이디 가져오기
-    const getOpponentIdRosters = await prisma.rosters.findMany({
-      where: { userId: +opponentId },
+    const getOpponentIdRosters = await prisma.users.findMany({
+      where: { id: opponentId },
       select: {
-        playerId: true,
+        rosters: {
+          select: {
+            playerId: true,
+          },
+        },
       },
     });
 
     // 상대 playerId 값을 빈배열로 빼오는 작업
     const opponentIdPlayerIdArr = [];
 
-    for (let playerId of getOpponentIdRosters) {
+    for (let playerId of getOpponentIdRosters[0].rosters) {
       opponentIdPlayerIdArr.push(playerId.playerId);
     }
 
     // 내 로스터에 저장된 플레이어 아이디 가져오기
-    const getUserIdRosters = await prisma.rosters.findMany({
-      where: { userId: +userId },
+    const getUserIdRosters = await prisma.users.findMany({
+      where: { id: userId },
       select: {
-        playerId: true,
+        rosters: {
+          select: {
+            playerId: true,
+          },
+        },
       },
     });
 
     // 내 playerId 값을 빈배열로 빼오는 작업
     const userIdPlayerIdArr = [];
 
-    for (let playerId of getUserIdRosters) {
+    for (let playerId of getUserIdRosters[0].rosters) {
       userIdPlayerIdArr.push(playerId.playerId);
     }
 
