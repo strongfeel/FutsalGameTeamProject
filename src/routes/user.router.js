@@ -20,7 +20,7 @@ router.post("/sign-up", async (req, res, next) => {
       return res.status(404).json({ message: "이미 존재하는 아이디 입니다." });
     }
 
-    // 비밀번호 생성시 영어 + 숫자조합 구성
+    // 비밀번호 생성시 영어 + 숫자조합과 6자리 이상 20자리 이하로  구성
     const regex = /^(?=.*[a-zA-Z])(?=.*[0-9]).{6,20}$/;
 
     if (!regex.test(password)) {

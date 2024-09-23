@@ -143,9 +143,6 @@ router.post(
         select: { rosterId: true },
       });
 
-      // 객체 값을 배열로 바꾸기
-      const getRosterIdArr = Object.values(getRosterId);
-
       await prisma.$transaction(async tx => {
         await tx.playerInventories.create({
           data: {
@@ -155,7 +152,7 @@ router.post(
         });
 
         await tx.rosters.delete({
-          where: { rosterId: getRosterIdArr.pop() },
+          where: { rosterId: +Object.values(getRosterId) },
         });
       });
 

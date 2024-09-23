@@ -195,8 +195,11 @@ router.post("/play", authMiddleware, async (req, res, next) => {
     let myScore = 0;
     let enemyScore = 0;
 
+    // 내 팀과 상대 팀의 스탯 점수 차
     let diff = userTotalPoint - opponentTotalPoint;
+    // 내 팀이 골 넣을 확률
     let chance1 = Math.round(50 + diff);
+    // 상대 팀이 골 넣을 확률
     let chance2 = Math.round(50 - diff);
 
     while (round < 10) {

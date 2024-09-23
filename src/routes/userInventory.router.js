@@ -110,14 +110,11 @@ router.post("/roster/add/:playerId", authMiddleware, async (req, res, next) => {
         .json({ message: "출전 선수 명단에 이미 존재 합니다." });
     }
 
-    // 인벤토리에서 인벤토리 아이디 하나 가져오기
+    // 인벤토리에서 해당 인벤토리 아이디 하나 가져오기
     const getInventoryId = await prisma.playerInventories.findFirst({
       where: { playerId: +playerId },
       select: { inventoryId: true },
     });
-
-    // 객체 값을 배열로 바꾸기
-    const getInventoryIdArr = Object.values(getInventoryId);
 
     await prisma.$transaction(async tx => {
       await tx.rosters.create({
@@ -128,7 +125,7 @@ router.post("/roster/add/:playerId", authMiddleware, async (req, res, next) => {
       });
 
       await tx.playerInventories.delete({
-        where: { inventoryId: getInventoryIdArr.pop() },
+        where: { inventoryId: +Object.values(getInventoryId) },
       });
     });
 

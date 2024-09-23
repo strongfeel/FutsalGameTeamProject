@@ -46,8 +46,10 @@ router.post("/playerDraw", authMiddleware, async (req, res, next) => {
       select: { playerId: true },
     });
 
+    // 오버롤에 따라서 나눈 선수들의 파트를 선택하기 위한 부분 (1~20 / 21~50 / 51~100)
     let getOverallPart = Math.floor(Math.random() * 100) + 1;
 
+    // 해당 오버롤 파트에서 뽑힌 선수 아이디를 저장하는 부분
     let randomPlayer = 0;
     if (getOverallPart <= 20) {
       let randomPlayerArr = Math.floor(
