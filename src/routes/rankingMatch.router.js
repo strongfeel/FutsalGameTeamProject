@@ -31,16 +31,27 @@ router.post("/play", authMiddleware, async (req, res, next) => {
       select: {
         userId: true,
         gamePoint: true,
+        rosters: {
+          select: {
+            playerId: true,
+          },
+        },
       },
       orderBy: { gamePoint: "desc" },
     });
+    console.log(getPlayerGamePoint);
 
     // 게임 포인트로 정렬된 유저 아이디 배열
     const getUserIdArr = [];
 
     for (let userId of getPlayerGamePoint) {
-      getUserIdArr.push(userId.userId);
+      // 상대편 출전 선수 명단에 3명이 준비된 유저만 조회
+      if (userId.rosters.length === 3) {
+        getUserIdArr.push(userId.userId);
+      }
     }
+
+    console.log(getUserIdArr);
 
     // 게임 포인트로 게임 매칭
     let opponentId;

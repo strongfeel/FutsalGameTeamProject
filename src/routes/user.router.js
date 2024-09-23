@@ -61,29 +61,7 @@ router.post("/sign-up", async (req, res, next) => {
           },
         });
 
-        // 출전 명단에 기본 선수 배치
-        const roster1 = await tx.rosters.create({
-          data: {
-            userId: user.userId,
-            playerId: 71,
-          },
-        });
-
-        const roster2 = await tx.rosters.create({
-          data: {
-            userId: user.userId,
-            playerId: 73,
-          },
-        });
-
-        const roster3 = await tx.rosters.create({
-          data: {
-            userId: user.userId,
-            playerId: 74,
-          },
-        });
-
-        return [user, gameRecord, roster1, roster2, roster3];
+        return [user, gameRecord];
       },
       {
         // 격리수준 설정
